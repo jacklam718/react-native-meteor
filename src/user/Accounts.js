@@ -18,7 +18,7 @@ module.exports = {
 
       User._handleLoginCallback(err, result);
 
-      callback(err);
+      callback(err, result);
     });
   },
   changePassword(oldPassword, newPassword, callback = ()=>{}) {
