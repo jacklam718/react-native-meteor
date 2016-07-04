@@ -121,7 +121,6 @@ module.exports = {
         });
       } else {
         this._endLoggingIn();
-        reject(Error(['endLoggingIn value is null', User.js, 123]);
       }
     });
   },
