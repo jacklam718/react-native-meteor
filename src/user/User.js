@@ -23,11 +23,14 @@ module.exports = {
     return this._isLoggingIn;
   },
   logout(callback) {
-    call("logout", err => {
-      this.handleLogout();
-      this.connect();
+    return new Promise((resolve, reject) => {
+      call("logout", err => {
+        this.handleLogout();
+        this.connect();
 
-      typeof callback == 'function' && callback(err);
+        typeof callback == 'function' && callback(err);
+        err ? reject(err) : resolve(undefined);
+      });
     });
   },
   handleLogout() {
@@ -44,36 +47,46 @@ module.exports = {
     }
 
     this._startLoggingIn();
-    call("login", {
-        user: selector,
-        password: hashPassword(password)
-    }, (err, result)=>{
-      this._endLoggingIn();
 
-      this._handleLoginCallback(err, result);
+    return new Promise((resolve, reject) => {
+      call("login", {
+          user: selector,
+          password: hashPassword(password)
+      }, (err, result)=>{
+        this._endLoggingIn();
 
-      typeof callback == 'function' && callback(err, result);
+        this._handleLoginCallback(err, result);
+
+        typeof callback == 'function' && callback(err);
+        err ? reject(err) : resolve(result);
+      });
     });
   },
   logoutOtherClients(callback = ()=>{}) {
-    call('getNewToken', (err, res) => {
-      if(err) return callback(err);
+    return new Promise((resolve, reject) => {
+      call('getNewToken', (err, res) => {
+        if(err) return callback(err);
 
-      this._handleLoginCallback(err, res);
+        this._handleLoginCallback(err, res);
+        err ? reject(err) : resolve(res);
 
-      call('removeOtherTokens', err=>{
-        callback(err);
-      })
+        call('removeOtherTokens', err => {
+          callback(err);
+        })
+      });
     });
   },
   _login(user, callback) {
-    this._startLoggingIn();
-    this.call("login", user, (err, result)=>{
-      this._endLoggingIn();
+    return new Promise((resolve, reject) => {
+      this._startLoggingIn();
+      this.call("login", user, (err, result)=>{
+        this._endLoggingIn();
 
-      this._handleLoginCallback(err, result);
+        this._handleLoginCallback(err, result);
 
-      typeof callback == 'function' && callback(err, result);
+        typeof callback == 'function' && callback(err);
+        err ? reject(err) : resolve(result);
+      });
     });
   },
   _startLoggingIn() {
@@ -96,15 +109,13 @@ module.exports = {
     }
     Data.notify('change');
   },
-  _loginWithToken(value, callback) {
+  _loginWithToken(value) {
     Data._tokenIdSaved = value;
     if (value !== null){
       this._startLoggingIn();
       call('login', { resume: value }, (err, result) => {
         this._endLoggingIn();
         this._handleLoginCallback(err, result);
-
-        typeof callback == 'function' && callback(err, result);
       });
     } else {
       this._endLoggingIn();

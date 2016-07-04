@@ -12,13 +12,16 @@ module.exports = {
     // Replace password with the hashed password.
     options.password = hashPassword(options.password);
 
-    User._startLoggingIn();
-    call("createUser", options, (err, result)=>{
-      User._endLoggingIn();
+    new Promise((resolve, reject) => {
+      User._startLoggingIn();
+      call("createUser", options, (err, result)=>{
+        User._endLoggingIn();
 
-      User._handleLoginCallback(err, result);
+        User._handleLoginCallback(err, result);
 
-      callback(err, result);
+        callback(err, result);
+        err ? reject(err) : resolve(result);
+      });
     });
   },
   changePassword(oldPassword, newPassword, callback = ()=>{}) {
@@ -29,12 +32,14 @@ module.exports = {
       return callback("Password may not be empty");
     }
 
-    call("changePassword",
-          oldPassword ? hashPassword(oldPassword) : null,
-          hashPassword(newPassword),
-      (err, res) => {
-
-      callback(err);
+    return new Promise((resolve, reject) => {
+      call("changePassword",
+        oldPassword ? hashPassword(oldPassword) : null,
+        hashPassword(newPassword),
+        (err, res) => {
+          callback(err);
+          err ? reject(err) : resolve(res);
+      });
     });
   },
   forgotPassword(options, callback = ()=>{}) {
@@ -42,8 +47,11 @@ module.exports = {
       return callback("Must pass options.email");
     }
 
-    call("forgotPassword", options, err => {
-      callback(err);
+    return new Promise((resolve, reject) => {
+      call("forgotPassword", options, err => {
+        callback(err);
+        err ? reject(err) : resolve(undefined);
+      });
     });
   },
   resetPassword(token, newPassword, callback = ()=>{}) {
@@ -51,12 +59,15 @@ module.exports = {
       return callback("Must pass a new password");
     }
 
-    call("resetPassword", token, hashPassword(newPassword), (err, result) => {
-      if (!err) {
-        User._loginWithToken(result.token);
-      }
+    return new Promise((resolve, reject) => {
+      call("resetPassword", token, hashPassword(newPassword), (err, result) => {
+        if (!err) {
+          User._loginWithToken(result.token);
+        }
 
-      callback(err);
+        callback(err);
+        err ? reject(err) : resolve(result);
+      });
     });
   },
   onLogin(cb) {
