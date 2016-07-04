@@ -111,15 +111,19 @@ module.exports = {
   },
   _loginWithToken(value) {
     Data._tokenIdSaved = value;
-    if (value !== null){
-      this._startLoggingIn();
-      call('login', { resume: value }, (err, result) => {
+    return new Promise((resolve, reject) => {
+      if (value !== null){
+        this._startLoggingIn();
+        call('login', { resume: value }, (err, result) => {
+          this._endLoggingIn();
+          this._handleLoginCallback(err, result);
+          err ? reject(err) : resolve(result);
+        });
+      } else {
         this._endLoggingIn();
-        this._handleLoginCallback(err, result);
-      });
-    } else {
-      this._endLoggingIn();
-    }
+        reject(Error(['endLoggingIn value is null', User.js, 123]);
+      }
+    });
   },
   async _loadInitialUser() {
     var value = null;
