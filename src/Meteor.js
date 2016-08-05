@@ -55,6 +55,23 @@ module.exports = {
     }
   },
   call: call,
+  callPromise(methodName, params) {
+    params = params || undefined;
+    // if (params && !_.isArray(params)) {
+    //   console.warn('Params must be passed as an array to ddp.call');
+    // }
+
+    return new Promise((resolve, reject) => {
+      call(methodName, params, (err, result) => {
+          // callback which returns the method call results
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+  },
   disconnect() {
     if(Data.ddp) {
       Data.ddp.disconnect();
